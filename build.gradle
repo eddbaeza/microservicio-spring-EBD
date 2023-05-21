@@ -2,7 +2,14 @@ plugins {
 	id 'org.springframework.boot' version '2.6.3'
 	id 'io.spring.dependency-management' version '1.0.11.RELEASE'
 	id 'java'
+	id 'jacoco'
 }
+
+jacoco {
+	toolVersion = "0.8.8"
+	reportsDirectory = file("$buildDir/jacocoHtml") // Directorio de destino para el informe HTML
+}
+
 
 group = 'com.example'
 version = '0.0.1-SNAPSHOT'
@@ -19,4 +26,22 @@ dependencies {
 
 test {
 	useJUnitPlatform()
+	finalizedBy jacocoTestReport // Generate JaCoCo report after running tests
 }
+
+jacocoTestReport {
+	reports {
+		html.enabled = true // Habilitar informe HTML
+		xml.enabled = true // Habilitar informe XML
+		csv.enabled = false // Deshabilitar informe CSV
+	}
+}
+/*jacocoTestCoverageVerification {
+	violationRules {
+		rule {
+			limit {
+				minimum = 0.85
+			}
+		}
+	}
+}*/
