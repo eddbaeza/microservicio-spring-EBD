@@ -21,10 +21,34 @@ steps:
     sonarQubeRunAnalysis: false
     spotBugsAnalysis: true
   displayName: 'Build y JaCoCo report'
+- task: PublishCodeCoverageResults@1
+  inputs:
+    codeCoverageTool: 'JaCoCo'
+    summaryFileLocation: '$(System.DefaultWorkingDirectory)/build/jacocoHtml/test/jacocoTestReport.xml'
+    reportDirectory: '$(System.DefaultWorkingDirectory)/build/jacocoHtml/test/html/'
+
 - task: SonarCloudPrepare@1
   inputs:
     SonarCloud: 'SonarCloud'
-    organization: 'mostwanted001'
-    projectKey: 'mostwanted001_microservicio-spring'
-    projectName: 'microservicio-spring'
-  displayName: 'SonarCloud Prepare'
+    organization: 'eddbaeza'
+    projectKey: 'eddbaeza_microservicio-spring-EBD'
+    projectName: 'microservicio-spring-EBD'
+    extraProperties: |
+      sonar.pullrequest.provider=none
+      sonar.scm.disabled=true
+      sonar.coverage.jacoco.xmlReportPaths=$(System.DefaultWorkingDirectory)/build/jacocoHtml/test/jacocoTestReport.xml
+      sonar.qualitygate.wait=true
+      sonar.qualitygate.conditions=blocker
+      sonar.issue.squid:MaximumInheritanceDepth.severity=BLOCKER
+  displayName: Preparar Sonar Cloud
+
+- task: Gradle@3
+  inputs:
+    gradleWrapperFile: 'gradlew'
+    tasks: 'sonarqube'
+    publishJUnitResults: false
+    javaHomeOption: 'JDKVersion'
+    sqGradlePluginVersionChoice: 'specify'
+    sonarQubeGradlePluginVersion: '3.5.0.2730'
+    spotBugsAnalysis: false
+  displayName: 'Run SonarCloud Analysis'
