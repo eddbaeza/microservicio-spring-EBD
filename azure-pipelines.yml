@@ -5,65 +5,91 @@
 
 trigger:
   - 'feature-ms-eddiebaeza-mensaje'
+jobs:
+- job: Job1
+  displayName: 'Job Cloud'
+  pool: 
+    ##vmImage: ubuntu-latest
+    name: ubuntu
+  steps:
+  - task: Gradle@3
+    inputs:
+      gradleWrapperFile: 'gradlew'
+      tasks: 'build jacocoTestReport jacocoTestCoverageVerification'
+      publishJUnitResults: true
+      testResultsFiles: '**/TEST-*.xml'
+      testRunTitle: 'Build and Generate JaCoCo report'
+      javaHomeOption: 'JDKVersion'
+      sonarQubeRunAnalysis: false
+      spotBugsAnalysis: true
+    displayName: 'Build y JaCoCo report'
+  - task: PublishCodeCoverageResults@1
+    inputs:
+      codeCoverageTool: 'JaCoCo'
+      summaryFileLocation: '$(System.DefaultWorkingDirectory)/build/jacocoHtml/test/jacocoTestReport.xml'
+      reportDirectory: '$(System.DefaultWorkingDirectory)/build/jacocoHtml/test/html/'
 
-pool: 
-  ##vmImage: ubuntu-latest
-  name: ubuntu
-steps:
-- task: Gradle@3
-  inputs:
-    gradleWrapperFile: 'gradlew'
-    tasks: 'build jacocoTestReport jacocoTestCoverageVerification'
-    publishJUnitResults: true
-    testResultsFiles: '**/TEST-*.xml'
-    testRunTitle: 'Build and Generate JaCoCo report'
-    javaHomeOption: 'JDKVersion'
-    sonarQubeRunAnalysis: false
-    spotBugsAnalysis: true
-  displayName: 'Build y JaCoCo report'
-- task: PublishCodeCoverageResults@1
-  inputs:
-    codeCoverageTool: 'JaCoCo'
-    summaryFileLocation: '$(System.DefaultWorkingDirectory)/build/jacocoHtml/test/jacocoTestReport.xml'
-    reportDirectory: '$(System.DefaultWorkingDirectory)/build/jacocoHtml/test/html/'
+  - task: SonarCloudPrepare@1
+    inputs:
+      SonarCloud: 'SonarCloud'
+      organization: 'eddbaeza'
+      projectKey: 'eddbaeza_microservicio-spring-EBD'
+      projectName: 'microservicio-spring-EBD'
+      extraProperties: |
+        sonar.pullrequest.provider=none
+        sonar.scm.disabled=true
+        sonar.coverage.jacoco.xmlReportPaths=$(System.DefaultWorkingDirectory)/build/jacocoHtml/test/jacocoTestReport.xml
+        sonar.qualitygate.wait=true
+        sonar.qualitygate.conditions=blocker
+        sonar.issue.squid:MaximumInheritanceDepth.severity=BLOCKER
+    displayName: Preparar Sonar Cloud
 
-- task: SonarCloudPrepare@1
-  inputs:
-    SonarCloud: 'SonarCloud'
-    organization: 'eddbaeza'
-    projectKey: 'eddbaeza_microservicio-spring-EBD'
-    projectName: 'microservicio-spring-EBD'
-    extraProperties: |
-      sonar.pullrequest.provider=none
-      sonar.scm.disabled=true
-      sonar.coverage.jacoco.xmlReportPaths=$(System.DefaultWorkingDirectory)/build/jacocoHtml/test/jacocoTestReport.xml
-      sonar.qualitygate.wait=true
-      sonar.qualitygate.conditions=blocker
-      sonar.issue.squid:MaximumInheritanceDepth.severity=BLOCKER
-  displayName: Preparar Sonar Cloud
+  - task: Gradle@3
+    inputs:
+      gradleWrapperFile: 'gradlew'
+      tasks: 'sonarqube'
+      publishJUnitResults: false
+      javaHomeOption: 'JDKVersion'
+      sqGradlePluginVersionChoice: 'specify'
+      sonarQubeGradlePluginVersion: '3.5.0.2730'
+      spotBugsAnalysis: false
+    displayName: 'Run SonarCloud Analysis'
+  - task: Docker@2
+    inputs:
+      containerRegistry: 'Docker'
+      command: 'login'
+    displayName: Docker Login
+  - task: Docker@2
+    inputs:
+      containerRegistry: 'Docker'
+      repository: 'eddbaeza/microservicio-spring'
+      command: 'buildAndPush'
+      tags: |
+            $(Build.BuildId)
+            latest
+      Dockerfile: '**/Dockerfile'
+    displayName: Docker (Build & Push)
+- job: Job2
+  displayName: 'Despliegue'
+  pool: 
+    ##vmImage: ubuntu-latest
+    name: Default
+  steps:
+    - task: Kubernetes@1
+      inputs:
+        connectionType: 'None'
+        command: 'apply'
+        arguments: '--force -f deploy.yaml'
+    - task: PowerShell@2
+      inputs:
+        targetType: 'inline'
+        script: |
+          Start-Process "kubectl" -ArgumentList "port-forward service/lab-service 8080:8080" -WindowStyle Hidden
+      displayName: 'kubectl port-forward'
+      continueOnError: true
 
-- task: Gradle@3
-  inputs:
-    gradleWrapperFile: 'gradlew'
-    tasks: 'sonarqube'
-    publishJUnitResults: false
-    javaHomeOption: 'JDKVersion'
-    sqGradlePluginVersionChoice: 'specify'
-    sonarQubeGradlePluginVersion: '3.5.0.2730'
-    spotBugsAnalysis: false
-  displayName: 'Run SonarCloud Analysis'
-- task: Docker@2
-  inputs:
-    containerRegistry: 'Docker'
-    command: 'login'
-  displayName: Docker Login
-- task: Docker@2
-  inputs:
-    containerRegistry: 'Docker'
-    repository: 'eddbaeza/microservicio-spring'
-    command: 'buildAndPush'
-    tags: |
-          $(Build.BuildId)
-          latest
-    Dockerfile: '**/Dockerfile'
-  displayName: Docker (Build & Push)
+    - task: CmdLine@2
+      inputs:
+          script: |
+              jmeter -n -t test.jmx -l resultados.jtl
+      displayName: 'Run JMeter'
