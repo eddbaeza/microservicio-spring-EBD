@@ -43,7 +43,7 @@ jacocoTestReport {
 		csv.enabled = false // Deshabilitar informe CSV
 	}
 }
-/*jacocoTestCoverageVerification {
+jacocoTestCoverageVerification {
 	violationRules {
 		rule {
 			limit {
@@ -51,4 +51,4 @@ jacocoTestReport {
 			}
 		}
 	}
-}*/
+}
