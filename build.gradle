@@ -3,13 +3,20 @@ plugins {
 	id 'io.spring.dependency-management' version '1.0.11.RELEASE'
 	id 'java'
 	id 'jacoco'
+	id "org.sonarqube" version "3.5.0.2730"
 }
 
 jacoco {
 	toolVersion = "0.8.8"
 	reportsDirectory = file("$buildDir/jacocoHtml") // Directorio de destino para el informe HTML
 }
-
+sonarqube {
+	properties {
+		property 'sonar.projectKey', 'eddbaeza_microservicio-spring-EBD'
+		property 'sonar.host.url', 'https://sonarcloud.io' // Cambia esta URL si estás usando un servidor SonarQube local
+		property 'sonar.organization', 'eddbaeza' // Otras propiedades de configuración de SonarQube
+	}
+}
 
 group = 'com.example'
 version = '0.0.1-SNAPSHOT'
