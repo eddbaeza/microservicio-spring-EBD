@@ -70,6 +70,7 @@ jobs:
       Dockerfile: '**/Dockerfile'
     displayName: Docker (Build & Push)
 - job: Job2
+  dependsOn: Job1
   displayName: 'Despliegue'
   pool: 
     ##vmImage: ubuntu-latest
