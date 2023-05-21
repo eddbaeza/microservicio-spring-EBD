@@ -10,17 +10,17 @@ pool:
   ##vmImage: ubuntu-latest
   name: ubuntu
 steps:
-- task: Gradle@2
+- task: Gradle@3
   inputs:
-    workingDirectory: ''
     gradleWrapperFile: 'gradlew'
-    gradleOptions: '-Xmx3072m'
-    javaHomeOption: 'JDKVersion'
-    jdkVersionOption: '1.8'
-    jdkArchitectureOption: 'x64'
+    tasks: 'build jacocoTestReport'
     publishJUnitResults: true
     testResultsFiles: '**/TEST-*.xml'
-    tasks: 'build'
+    testRunTitle: 'Build and Generate JaCoCo report'
+    javaHomeOption: 'JDKVersion'
+    sonarQubeRunAnalysis: false
+    spotBugsAnalysis: true
+  displayName: 'Build y JaCoCo report'
 - task: SonarCloudPrepare@1
   inputs:
     SonarCloud: 'SonarCloud'
