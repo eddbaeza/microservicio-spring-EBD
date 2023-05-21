@@ -52,3 +52,18 @@ steps:
     sonarQubeGradlePluginVersion: '3.5.0.2730'
     spotBugsAnalysis: false
   displayName: 'Run SonarCloud Analysis'
+- task: Docker@2
+  inputs:
+    containerRegistry: 'Docker'
+    command: 'login'
+  displayName: Docker Login
+- task: Docker@2
+  inputs:
+    containerRegistry: 'Docker'
+    repository: 'eddbaeza/microservicio-spring'
+    command: 'buildAndPush'
+    tags: |
+          $(Build.BuildId)
+          latest
+    Dockerfile: '**/Dockerfile'
+  displayName: Docker (Build & Push)
