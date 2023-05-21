@@ -4,9 +4,9 @@
 # https://docs.microsoft.com/azure/devops/pipelines/languages/java
 
 trigger:
-- main
+  - 'feature-ms-eddiebaeza-mensaje'
 
-pool:
+pool: 
   ##vmImage: ubuntu-latest
   name: ubuntu
 steps:
